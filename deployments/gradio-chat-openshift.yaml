@@ -1,0 +1,92 @@
+# 1. ConfigMap for ol_config.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ol-config
+data:
+  ol_config.json: |
+    {
+      "host": "http://ollama:11434"
+    }
+
+---
+
+# 2. Persistent Volume Claim for chat history
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gradio-chat-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+# 3. Deployment with ConfigMap + PVC
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gradio-chat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gradio-chat
+  template:
+    metadata:
+      labels:
+        app: gradio-chat
+    spec:
+      containers:
+        - name: gradio-chat
+          image: your-registry/gradio-chat:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7860
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/ol_config.json
+              subPath: ol_config.json
+            - name: chat-history-volume
+              mountPath: /app/chat_history
+      volumes:
+        - name: config-volume
+          configMap:
+            name: ol-config
+        - name: chat-history-volume
+          persistentVolumeClaim:
+            claimName: gradio-chat-pvc
+
+---
+
+# 4. Service to expose the app
+apiVersion: v1
+kind: Service
+metadata:
+  name: gradio-chat
+spec:
+  selector:
+    app: gradio-chat
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 7860
+
+---
+
+# 5. Route to expose publicly
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: gradio-chat
+spec:
+  to:
+    kind: Service
+    name: gradio-chat
+  port:
+    targetPort: 7860
+  tls:
+    termination: edge

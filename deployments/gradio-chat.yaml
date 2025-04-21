@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gradio-chat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gradio-chat
+  template:
+    metadata:
+      labels:
+        app: gradio-chat
+    spec:
+      containers:
+        - name: gradio-chat
+          image: your-registry/gradio-chat:latest
+          ports:
+            - containerPort: 7860
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/ol_config.json
+              subPath: ol_config.json
+            - name: chat-history-volume
+              mountPath: /app/chat_history
+      volumes:
+        - name: config-volume
+          configMap:
+            name: ol-config
+        - name: chat-history-volume
+          persistentVolumeClaim:
+            claimName: gradio-chat-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gradio-chat-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
