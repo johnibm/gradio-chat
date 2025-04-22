@@ -5,7 +5,7 @@ USER 0
 # Copy source files
 #COPY . .
 COPY /app .
-RUN chgrp -R 0 . && chmod -R g+rwX .  
+RUN chgrp -R 0 . && chmod -R g+rwX ./app 
 RUN chown -R 1001:0 ./
 USER 1001
 
