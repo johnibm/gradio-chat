@@ -1,5 +1,9 @@
 import json
 import requests
+import os
+
+ollama_host = os.getenv("OLLAMA_HOST", "localhost")  # fallback to localhost if not set
+url = f"http://{ollama_host}:11434/v1/completions"
 
 def query3(model_name, prompt, temperature, max_tokens):
     """
