@@ -42,7 +42,7 @@ spec:
     spec:
       containers:
         - name: gradio-chat
-          image: quay.io/gradio-chat:v1
+          image: quay.io/johnibm/gradio-chat:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 7860
