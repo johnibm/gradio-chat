@@ -1,8 +1,11 @@
 import json
 import requests
+import os
 
 def test_ollama_api():
-    url = "http://<resolved-host>:11434/v1/completions"  # Replace with actual URL if different
+    ollama_host = os.getenv("OLLAMA_HOST", "localhost")  # fallback to localhost if not set
+    url = f"http://{ollama_host}:11434/v1/completions"
+    
     headers = {"Content-Type": "application/json"}
 
     data = {
