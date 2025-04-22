@@ -4,7 +4,7 @@ FROM python:3.10-slim
 USER 0
 # Copy source files
 #COPY . .
-COPY /app .
+COPY /app ./app
 RUN chgrp -R 0 ./app && chmod -R g+rwX ./app 
 RUN chown -R 1001:0 ./app
 USER 1001
