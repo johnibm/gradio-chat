@@ -31,4 +31,7 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
     history.append({"role": "user", "content": user_input})
 
     if use_context:
-        context = "\n".join(f"{msg['role'].capitalize()}:
+       context = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in history)
+       prompt = f"Question: {user_input}\nContext: {context}"
+    else:
+       prompt = user_input
