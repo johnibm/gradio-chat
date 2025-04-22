@@ -29,7 +29,7 @@ def query3(model_name, prompt, temperature, max_tokens):
         "max_tokens": max_tokens,
         "stream": False  # To stream the response.
     }
-
+    print(f"Requesting {url} with data: {json.dumps(data)}")
     try:
         response = requests.post(url, headers=headers, json=data)
 
