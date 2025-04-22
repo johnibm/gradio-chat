@@ -6,8 +6,6 @@ from ol_prompt_query import *
 from ollama import Client
 
 # Load configuration
-
-
 try:
     with open('./ol_config.json', 'r') as file:
         config = json.load(file)
@@ -36,11 +34,24 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
     # Append user message
     history.append({"role": "user", "content": user_input})
 
+    # Create prompt
     if use_context:
-       context = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in history)
-       prompt = f"Question: {user_input}\nContext: {context}"
+        context = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in history)
+        prompt = f"Question: {user_input}\nContext: {context}"
     else:
-       prompt = user_input
+        prompt = user_input
+
+    assistant_content = ""
+    yield history + [{"role": "assistant", "content": f"🤖 Analysing: {user_input}..."}], history
+
+    # Generate response
+    for chunk in query3(model_name, prompt, temperature, max_tokens):
+        assistant_content += chunk
+        yield history + [{"role": "assistant", "content": assistant_content}], history
+
+    history.append({"role": "assistant", "content": assistant_content})
+    yield history, history
+
 # Utility: Clear conversation
 def clear_chat():
     return [], []
@@ -52,7 +63,7 @@ def save_chat(history):
     conversation = {
         "conversation": {
             "timestamp": timestr,
-            "content": [{"role": role, "content": msg} for role, msg in history]
+            "content": [{"role": msg["role"], "content": msg["content"]} for msg in history]
         }
     }
     with open(fn, 'w') as fd:
@@ -69,9 +80,7 @@ with gr.Blocks(title="ε.chat v2.0") as demo:
         max_tokens_input = gr.Number(value=256, label="Max Tokens", precision=0)
         use_context_toggle = gr.Checkbox(label="Use Context", value=True)
 
-    #chatbot = gr.Chatbot(label="Conversation")
     chatbot = gr.Chatbot(label="Conversation", type="messages")
-
     user_input = gr.Textbox(placeholder="Type or paste your message here...", label="Your message")
 
     with gr.Row():
