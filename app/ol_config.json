@@ -1,1 +1,3 @@
-{"host":"ollama"}
+{
+    "host": "http://ollama:11434"
+}
