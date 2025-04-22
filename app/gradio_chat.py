@@ -41,7 +41,8 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
         assistant_content += chunk
         yield history + [(model_name, assistant_content)], history
 
-    history.append((model_name, assistant_content))
+    #history.append((model_name, assistant_content))
+    history.append(("Assistant", assistant_content))
     yield history, history
 
 def clear_chat():
