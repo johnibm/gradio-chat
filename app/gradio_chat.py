@@ -41,3 +41,53 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
        prompt = f"Question: {user_input}\nContext: {context}"
     else:
        prompt = user_input
+# Utility: Clear conversation
+def clear_chat():
+    return [], []
+
+# Utility: Save conversation to JSON
+def save_chat(history):
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    fn = f"chat-{timestr}.json"
+    conversation = {
+        "conversation": {
+            "timestamp": timestr,
+            "content": [{"role": role, "content": msg} for role, msg in history]
+        }
+    }
+    with open(fn, 'w') as fd:
+        json.dump(conversation, fd)
+    return f"Saved to {os.getcwd()}/{fn}"
+
+# UI definition
+with gr.Blocks(title="ε.chat v2.0") as demo:
+    gr.Markdown("## 💬 ε.chat v2.0")
+
+    with gr.Row():
+        model_dropdown = gr.Dropdown(choices=model_list, label="Model Selection")
+        temp_slider = gr.Slider(0.0, 1.0, value=0.7, label="Temperature")
+        max_tokens_input = gr.Number(value=256, label="Max Tokens", precision=0)
+        use_context_toggle = gr.Checkbox(label="Use Context", value=True)
+
+    #chatbot = gr.Chatbot(label="Conversation")
+    chatbot = gr.Chatbot(label="Conversation", type="messages")
+
+    user_input = gr.Textbox(placeholder="Type or paste your message here...", label="Your message")
+
+    with gr.Row():
+        clear_btn = gr.Button("🗑️ Clear Conversation")
+        save_btn = gr.Button("💽 Save Conversation")
+
+    state = gr.State([])
+
+    user_input.submit(
+        chat_with_model,
+        inputs=[user_input, model_dropdown, temp_slider, max_tokens_input, use_context_toggle, state],
+        outputs=[chatbot, state]
+    )
+
+    clear_btn.click(fn=clear_chat, outputs=[chatbot, state])
+    save_btn.click(fn=save_chat, inputs=state, outputs=None)
+
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)
