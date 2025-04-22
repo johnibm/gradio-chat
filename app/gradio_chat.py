@@ -17,45 +17,61 @@ try:
 except Exception as e:
     raise RuntimeError("Ollama serve appears offline") from e
 
-# Session state equivalent
-chat_history = []
+# Helper to convert internal history to chatbot format
+def to_chatbot_format(history):
+    pairs = []
+    user_msg = None
+    for role, msg in history:
+        if role == "You":
+            user_msg = msg
+        elif role == "Assistant" and user_msg is not None:
+            pairs.append((user_msg, msg))
+            user_msg = None
+    return pairs
 
+# Chat logic
 def chat_with_model(user_input, model_name, temperature, max_tokens, use_context, history):
     if not user_input.strip() or model_name is None:
-        return history + [("Error", "Please provide input text and select a model before submitting.")], history
+        history.append(("Assistant", "Please provide input text and select a model before submitting."))
+        return to_chatbot_format(history), history
 
-    # Append user message
     history.append(("You", user_input))
 
-    # Construct prompt
     if use_context:
-        context = "\n".join(f"{role}: {msg}" for role, msg in history if role == "You" or role == model_name)
+        context = "\n".join(f"{role}: {msg}" for role, msg in history if role in ["You", "Assistant"])
         prompt = f"Question: {user_input} Context: {context}"
     else:
         prompt = user_input
 
     assistant_content = ""
-    yield history + [(model_name, f"🤖 Analysing: {user_input}...")], history
+    yield to_chatbot_format(history + [("Assistant", f"🤖 Analysing: {user_input}...")]), history
 
     for chunk in query3(model_name, prompt, temperature, max_tokens):
         assistant_content += chunk
-        yield history + [(model_name, assistant_content)], history
+        yield to_chatbot_format(history + [("Assistant", assistant_content)]), history
 
-    #history.append((model_name, assistant_content))
     history.append(("Assistant", assistant_content))
-    yield history, history
+    yield to_chatbot_format(history), history
 
+# Utility: Clear conversation
 def clear_chat():
     return [], []
 
+# Utility: Save conversation to JSON
 def save_chat(history):
     timestr = time.strftime("%Y%m%d-%H%M%S")
     fn = f"chat-{timestr}.json"
-    conversation = {"conversation": {"timestamp": timestr, "content": [{"role": role, "content": msg} for role, msg in history]}}
+    conversation = {
+        "conversation": {
+            "timestamp": timestr,
+            "content": [{"role": role, "content": msg} for role, msg in history]
+        }
+    }
     with open(fn, 'w') as fd:
         json.dump(conversation, fd)
     return f"Saved to {os.getcwd()}/{fn}"
 
+# UI definition
 with gr.Blocks(title="ε.chat v2.0") as demo:
     gr.Markdown("## 💬 ε.chat v2.0")
 
