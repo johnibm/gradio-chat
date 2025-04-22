@@ -44,6 +44,9 @@ spec:
         - name: gradio-chat
           image: quay.io/johnibm/gradio-chat:v1
           imagePullPolicy: Always
+          env:
+            - name: OLLAMA_HOST
+              value: "ollama"
           ports:
             - containerPort: 7860
           volumeMounts:
