@@ -31,6 +31,14 @@ def to_chatbot_format(history):
 
 # Chat logic
 def chat_with_model(user_input, model_name, temperature, max_tokens, use_context, history):
+    print("=== chat_with_model called ===")
+    print(f"user_input: {user_input}")
+    print(f"model_name: {model_name}")
+    print(f"temperature: {temperature}")
+    print(f"max_tokens: {max_tokens}")
+    print(f"use_context: {use_context}")
+    print(f"history: {history}")
+    
     if not user_input.strip() or model_name is None:
         history.append({"role": "assistant", "content": "Please provide input text and select a model before submitting."})
         return history, history
