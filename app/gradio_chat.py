@@ -44,11 +44,12 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
         prompt = user_input
 
     assistant_content = ""
-    yield history + [{"role": "assistant", "content": f"🤖 Analysing: {user_input}..."}], history
-
     print(f"User input: {user_input}")
+    print(f"Model selected: {model_name}")
+    print(f"Use context: {use_context}")
     print(f"Prompt: {prompt}")
-
+    yield history + [{"role": "assistant", "content": f"🤖 Analysing: {user_input}..."}], history
+    
     for chunk in query3(model_name, prompt, temperature, max_tokens):
         assistant_content += chunk
         yield history + [{"role": "assistant", "content": assistant_content}], history
