@@ -23,7 +23,7 @@ try:
 except Exception as e:
     raise RuntimeError("Ollama serve appears offline") from e
 
-# Chat logic using OpenAI-style message format
+# Chat logic 
 def chat_with_model(user_input, model_name, temperature, max_tokens, use_context, history):
     print("=== chat_with_model called ===")
     print(f"user_input: {user_input}")
@@ -33,14 +33,25 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
         history.append({"role": "assistant", "content": "Please provide input text and select a model before submitting."})
         return history, history
 
-    # Append user message
     history.append({"role": "user", "content": user_input})
 
     if use_context:
-       context = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in history)
-       prompt = f"Question: {user_input}\nContext: {context}"
+        context = "\n".join(f"{msg['role'].capitalize()}: {msg['content']}" for msg in history)
+        prompt = f"Question: {user_input}\nContext: {context}"
     else:
-       prompt = user_input
+        prompt = user_input
+
+    assistant_content = ""
+    # Yield a "thinking" message
+    yield history + [{"role": "assistant", "content": f"🤖 Analysing: {user_input}..."}], history
+
+    # Generate response using query3
+    for chunk in query3(model_name, prompt, temperature, max_tokens):
+        assistant_content += chunk
+        yield history + [{"role": "assistant", "content": assistant_content}], history
+
+    history.append({"role": "assistant", "content": assistant_content})
+    yield history, history
 # Utility: Clear conversation
 def clear_chat():
     return [], []
