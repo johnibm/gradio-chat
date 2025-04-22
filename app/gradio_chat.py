@@ -36,6 +36,8 @@ def chat_with_model(user_input, model_name, temperature, max_tokens, use_context
         return to_chatbot_format(history), history
 
     history.append(("You", user_input))
+    print(f"User input: {user_input}")
+    print(f"Prompt: {prompt}")
 
     if use_context:
         context = "\n".join(f"{role}: {msg}" for role, msg in history if role in ["You", "Assistant"])
