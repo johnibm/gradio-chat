@@ -17,7 +17,7 @@ def query3(model_name, prompt, temperature, max_tokens):
     Yields:
         str: Response chunks as they become available from the API.
     """
-#    url = "http://$OLLAMA_HOST:11434/v1/completions"  # Update with actual Ollama API URL if different.
+
     headers = {
         "Content-Type": "application/json",
     }
@@ -31,7 +31,7 @@ def query3(model_name, prompt, temperature, max_tokens):
     }
 
     try:
-        response = requests.post(url, headers=headers, json=data, stream=True)
+        response = requests.post(url, headers=headers, json=data)
 
         # Check if the response is successful
         if response.status_code == 200:
