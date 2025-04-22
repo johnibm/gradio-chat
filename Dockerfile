@@ -2,6 +2,10 @@ FROM python:3.10-slim
 
 #Set user and copy files
 USER 0
+
+#Install curl
+RUN apt-get update && apt-get install -y curl
+
 # Copy source files
 #COPY . .
 COPY /app /app
