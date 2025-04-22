@@ -21,7 +21,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 5Gi
 
 ---
 
@@ -42,7 +42,7 @@ spec:
     spec:
       containers:
         - name: gradio-chat
-          image: your-registry/gradio-chat:latest
+          image: quay.io/gradio-chat:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 7860

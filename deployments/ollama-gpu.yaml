@@ -1,0 +1,127 @@
+# PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: ollama
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ollama
+    spec:      
+      initContainers:
+        - name: model-init
+          image: quay.io/johnibm/ollama:v1
+          imagePullPolicy: Always
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+
+              # Start Ollama in the background
+              ollama serve &
+              OLLAMA_PID=$!
+
+              # Wait for Ollama to be ready
+              echo "Waiting for Ollama server to be ready..."
+              until curl -s http://localhost:11434/api/tags > /dev/null; do
+                sleep 1
+              done
+              echo "Ollama server is ready."
+
+              # Pull the models
+              echo "Pulling models..."
+              ollama pull zephyr:latest || echo "Failed to pull zephyr model"
+              ollama pull mxbai-embed-large || echo "Failed to pull embedding model"
+
+              # Wait for both models to be available
+              echo "Waiting for models to be ready..."
+              until ollama list | grep -q "zephyr:latest" && ollama list | grep -q "mxbai-embed-large"; do
+                sleep 2
+              done
+
+              echo "All models are ready. Ollama is now serving."
+              # Kill the Ollama process to allow the init container to exit
+              kill $OLLAMA_PID
+              # Ensure that the container exits after initializing
+              exit 0
+
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /.ollama
+
+      containers:
+      - args:
+        - serve
+        env:
+        - name: OLLAMA_PORT
+          value: "11434"
+        image: quay.io/johnibm/ollama:v1
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 2000m
+            memory: 9Gi
+            nvidia.com/gpu: 1
+          limits:
+            cpu: 4000m
+            memory: 9Gi
+            nvidia.com/gpu: 1
+        name: ollama
+        ports:
+        - containerPort: 11434
+          name: frontend
+          protocol: TCP
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /.ollama
+          name: ollama-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: ollama-data
+        persistentVolumeClaim:
+          claimName: ollama-data
+---
+# Service ollama
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  labels:
+    app: ollama
+spec:
+  ClusterIP: None
+  selector:
+    app: ollama
+  ports:
+    - name: api
+      port: 11434
+      targetPort: 11434
