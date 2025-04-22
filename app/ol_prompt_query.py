@@ -27,7 +27,7 @@ def query3(model_name, prompt, temperature, max_tokens):
         "prompt": prompt,
         "temperature": temperature,
         "max_tokens": max_tokens,
-        "stream": True  # To stream the response.
+        "stream": False  # To stream the response.
     }
 
     try:
