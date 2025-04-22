@@ -6,10 +6,16 @@ from ol_prompt_query import *
 from ollama import Client
 
 # Load configuration
-with open('./ol_config.json', 'r') as file:
-    config = json.load(file)
 
-host = config['host']
+
+try:
+    with open('./ol_config.json', 'r') as file:
+        config = json.load(file)
+        host = config.get('host', 'http://ollama:11434')
+except Exception as e:
+    print(f"Failed to load config: {e}")
+    host = 'http://localhost:11434'
+
 ollama_client = Client(host=host)
 
 try:
