@@ -32,29 +32,29 @@ def to_chatbot_format(history):
 # Chat logic
 def chat_with_model(user_input, model_name, temperature, max_tokens, use_context, history):
     if not user_input.strip() or model_name is None:
-        history.append(("Assistant", "Please provide input text and select a model before submitting."))
-        return to_chatbot_format(history), history
+        history.append({"role": "assistant", "content": "Please provide input text and select a model before submitting."})
+        return history, history
 
-    history.append(("You", user_input))
-    
+    history.append({"role": "user", "content": user_input})
+
     if use_context:
-        context = "\n".join(f"{role}: {msg}" for role, msg in history if role in ["You", "Assistant"])
+        context = "\n".join(f"{item['role']}: {item['content']}" for item in history)
         prompt = f"Question: {user_input} Context: {context}"
     else:
         prompt = user_input
-    #Debugging
+
+    assistant_content = ""
+    yield history + [{"role": "assistant", "content": f"🤖 Analysing: {user_input}..."}], history
+
     print(f"User input: {user_input}")
     print(f"Prompt: {prompt}")
 
-    assistant_content = ""
-    yield to_chatbot_format(history + [("Assistant", f"🤖 Analysing: {user_input}...")]), history
-
     for chunk in query3(model_name, prompt, temperature, max_tokens):
         assistant_content += chunk
-        yield to_chatbot_format(history + [("Assistant", assistant_content)]), history
+        yield history + [{"role": "assistant", "content": assistant_content}], history
 
-    history.append(("Assistant", assistant_content))
-    yield to_chatbot_format(history), history
+    history.append({"role": "assistant", "content": assistant_content})
+    yield history, history
 
 # Utility: Clear conversation
 def clear_chat():
@@ -84,7 +84,9 @@ with gr.Blocks(title="ε.chat v2.0") as demo:
         max_tokens_input = gr.Number(value=256, label="Max Tokens", precision=0)
         use_context_toggle = gr.Checkbox(label="Use Context", value=True)
 
-    chatbot = gr.Chatbot(label="Conversation")
+    #chatbot = gr.Chatbot(label="Conversation")
+    chatbot = gr.Chatbot(label="Conversation", type="messages")
+
     user_input = gr.Textbox(placeholder="Type or paste your message here...", label="Your message")
 
     with gr.Row():
